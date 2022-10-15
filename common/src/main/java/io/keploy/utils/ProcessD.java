@@ -18,7 +18,10 @@ import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @NoArgsConstructor
 public class ProcessD {
@@ -148,7 +151,7 @@ public class ProcessD {
                 Service.Mock mock = Service.Mock.newBuilder()
                         .setVersion(Mock.Version.V1_BETA1.value)
                         .setName("")
-                        .setKind(Mock.Kind.GENERIC_EXPORT.value)
+                        .setKind(Mock.Kind.GENERIC.value)
                         .setSpec(specSchema)
                         .build();
 

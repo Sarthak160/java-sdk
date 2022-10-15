@@ -20,6 +20,8 @@ import java.util.Objects;
 
 public class KPreparedStatement implements PreparedStatement {
  PreparedStatement wrappedPreparedStatement;
+ Kcontext kctx = Context.getCtx();
+ mode.ModeType mode = kctx.getMode();
 
  public KPreparedStatement(PreparedStatement pst) {
   wrappedPreparedStatement = pst;
@@ -31,7 +33,7 @@ public class KPreparedStatement implements PreparedStatement {
 
  @Override
  public ResultSet executeQuery() throws SQLException {
-  Kcontext kctx = Context.getCtx();
+
   if (kctx == null) {
    ResultSet resultSet = Mockito.mock(ResultSet.class);
    return new KResultSet(resultSet);
@@ -50,7 +52,7 @@ public class KPreparedStatement implements PreparedStatement {
     System.out.println("integrations: Not in a valid sdk mode");
   }
 
-  Map<String, String> meta = new HashMap<>();
+  Map<String, String> meta;
   meta = ProcessD.getMeta(rs);
   depsobj rs2;
   try {
@@ -71,7 +73,6 @@ public class KPreparedStatement implements PreparedStatement {
    return 0;
   }
   mode.ModeType mode = kctx.getMode();
-
   int rs = 1;
   switch (mode) {
    case MODE_TEST:
@@ -79,7 +80,7 @@ public class KPreparedStatement implements PreparedStatement {
     break;
    case MODE_RECORD:
     rs = wrappedPreparedStatement.executeUpdate();
-    System.out.println(rs);
+    System.out.println(rs + "Inside execute update !! ");
     break;
    default:
     System.out.println("integrations: Not in a valid sdk mode");
@@ -90,169 +91,49 @@ public class KPreparedStatement implements PreparedStatement {
 
  @Override
  public void setNull(int parameterIndex, int sqlType) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//   return;
-//  }
-//  mode.ModeType mode = kctx.getMode();
-//
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setNull(parameterIndex, sqlType);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
-
+  wrappedPreparedStatement.setNull(parameterIndex, sqlType);
  }
 
  @Override
  public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//   return;
-//  }
-//
-//  mode.ModeType mode = kctx.getMode();
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setBoolean(parameterIndex, x);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
-
+  wrappedPreparedStatement.setBoolean(parameterIndex, x);
  }
 
  @Override
  public void setByte(int parameterIndex, byte x) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//   return;
-//  }
-//  mode.ModeType mode = kctx.getMode();
-//
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setByte(parameterIndex, x);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
-
+  wrappedPreparedStatement.setByte(parameterIndex, x);
  }
 
  @Override
  public void setShort(int parameterIndex, short x) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//   return;
-//  }
-//  mode.ModeType mode = kctx.getMode();
-//
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setShort(parameterIndex, x);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
+
+  wrappedPreparedStatement.setShort(parameterIndex, x);
 
  }
 
  @Override
  public void setInt(int parameterIndex, int x) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//   return;
-//  }
-//  mode.ModeType mode = kctx.getMode();
-//
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setInt(parameterIndex, x);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
+
+  wrappedPreparedStatement.setInt(parameterIndex, x);
 
  }
 
  @Override
  public void setLong(int parameterIndex, long x) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//   return;
-//  }
-//  mode.ModeType mode = kctx.getMode();
-//
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setLong(parameterIndex, x);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
+
+  wrappedPreparedStatement.setLong(parameterIndex, x);
+
  }
 
  @Override
  public void setFloat(int parameterIndex, float x) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//
-//   return;
-//  }
-//  mode.ModeType mode = kctx.getMode();
-//
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setFloat(parameterIndex, x);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
+  wrappedPreparedStatement.setFloat(parameterIndex, x);
 
  }
 
  @Override
  public void setDouble(int parameterIndex, double x) throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  if (kctx == null) {
-//   return;
-//  }
-//  mode.ModeType mode = kctx.getMode();
-//
-//  switch (mode) {
-//   case MODE_TEST:
-//    // don't run
-//    break;
-//   case MODE_RECORD:
-    wrappedPreparedStatement.setDouble(parameterIndex, x);
-//    break;
-//   default:
-//    System.out.println("integrations: Not in a valid sdk mode");
-//  }
+  wrappedPreparedStatement.setDouble(parameterIndex, x);
  }
 
  @Override
@@ -747,7 +628,7 @@ public class KPreparedStatement implements PreparedStatement {
 
  @Override
  public boolean isCloseOnCompletion() throws SQLException {
-  if (Objects.equals(System.getenv("KEPLOY_MODE"), "test")){
+  if (Objects.equals(System.getenv("KEPLOY_MODE"), "test")) {
    return true;
   }
   return wrappedPreparedStatement.isCloseOnCompletion();

@@ -53,7 +53,7 @@ public class okhttp implements Interceptor {
 
         switch (modeFromContext) {
             case MODE_TEST:  //don't call chain.proceed(request) when not in file export
-                if (kctx.getMock().size() > 0 && kctx.getMock().get(0).getKind().equals(Mock.Kind.HTTP_EXPORT.value)) {
+                if (kctx.getMock().size() > 0 && kctx.getMock().get(0).getKind().equals(Mock.Kind.HTTP.value)) {
                     List<Service.Mock> mocks = kctx.getMock();
                     if (mocks.size() > 0 && mocks.get(0).getSpec().getObjectsCount() > 0) {
                         com.google.protobuf.ByteString bin = mocks.get(0).getSpec().getObjectsList().get(0).getData();
@@ -137,7 +137,7 @@ public class okhttp implements Interceptor {
 
                 Service.Mock httpMock = Service.Mock.newBuilder()
                         .setVersion(Mock.Version.V1_BETA1.value)
-                        .setKind(Mock.Kind.HTTP_EXPORT.value)
+                        .setKind(Mock.Kind.HTTP.value)
                         .setName(kctx.getTestId())
                         .setSpec(specSchema)
                         .build();

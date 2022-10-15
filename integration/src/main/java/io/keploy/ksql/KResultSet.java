@@ -1,32 +1,45 @@
 package io.keploy.ksql;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import io.keploy.regression.context.Context;
-import io.keploy.regression.context.Kcontext;
-import io.keploy.regression.mode;
-import io.keploy.utils.ProcessD;
-import io.keploy.utils.depsobj;
+import org.h2.tools.SimpleRowSource;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Map;
 
-public class KResultSet implements ResultSet,Cloneable {
+public class KResultSet implements ResultSet {
  ResultSet wrappedResultSet;
+ ArrayList<Object> row = new ArrayList<>();
+ private int start;
+
+// message SqlCol  {
+//  string Name = 1;
+//  string Type = 2;
+//  //optional fields
+//  int64 Precision = 3;
+//  int64 Scale = 4;
+// }
 
  public KResultSet(ResultSet rs) {
   wrappedResultSet = rs;
  }
 
- public KResultSet(){
+ public KResultSet() {
 
  }
 
  @Override
  public boolean next() throws SQLException {
+
+  System.out.println(start);
+  System.out.println(row);
+  SimpleRowSource x = new KSimpleRowSource(row);
+  x.readRow();
+  start++;
   return wrappedResultSet.next();
  }
 
@@ -42,7 +55,9 @@ public class KResultSet implements ResultSet,Cloneable {
 
  @Override
  public String getString(int columnIndex) throws SQLException {
-  return wrappedResultSet.getString(columnIndex);
+  String x = wrappedResultSet.getString(columnIndex);
+  row.add(x);
+  return x;
  }
 
  @Override
@@ -65,12 +80,15 @@ public class KResultSet implements ResultSet,Cloneable {
  @Override
  public int getInt(int columnIndex) throws SQLException {
   int gi = wrappedResultSet.getInt(columnIndex);
+  row.add(gi);
   return gi;
  }
 
  @Override
  public long getLong(int columnIndex) throws SQLException {
-  return wrappedResultSet.getLong(columnIndex);
+  long gl = wrappedResultSet.getLong(columnIndex);
+  row.add(gl);
+  return gl;
  }
 
  @Override
@@ -127,7 +145,9 @@ public class KResultSet implements ResultSet,Cloneable {
 
  @Override
  public String getString(String columnLabel) throws SQLException {
-  return wrappedResultSet.getString(columnLabel);
+  String gs = wrappedResultSet.getString(columnLabel);
+  row.add(gs);
+  return gs;
  }
 
  @Override
@@ -147,12 +167,16 @@ public class KResultSet implements ResultSet,Cloneable {
 
  @Override
  public int getInt(String columnLabel) throws SQLException {
-  return wrappedResultSet.getInt(columnLabel);
+  int gi = wrappedResultSet.getInt(columnLabel);
+  row.add(gi);
+  return gi;
  }
 
  @Override
  public long getLong(String columnLabel) throws SQLException {
-  return wrappedResultSet.getLong(columnLabel);
+  long gl = wrappedResultSet.getLong(columnLabel);
+  row.add(gl);
+  return gl;
  }
 
  @Override
@@ -224,6 +248,7 @@ public class KResultSet implements ResultSet,Cloneable {
 
  @Override
  public ResultSetMetaData getMetaData() throws SQLException {
+  System.out.println(">>>>>>>>>>>>>>>>>>>>>> call >>>>>>>>>>>>>>>");
   ResultSetMetaData getMetaData = wrappedResultSet.getMetaData();
   ResultSetMetaData kgetMetaData = new KResultSetMetaData(getMetaData);
   return kgetMetaData;

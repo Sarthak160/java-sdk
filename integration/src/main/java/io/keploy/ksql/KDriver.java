@@ -2,15 +2,8 @@ package io.keploy.ksql;
 
 import io.keploy.regression.context.Context;
 import io.keploy.regression.context.Kcontext;
-import io.keploy.regression.mode;
-import lombok.SneakyThrows;
-import org.mockito.Mockito;
 import org.postgresql.Driver;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
@@ -65,7 +58,6 @@ public class KDriver implements java.sql.Driver {
 
         if (Objects.equals(System.getenv("KEPLOY_MODE"), "test")){
             Connection conn = new KConnection();
-            MockConnection(conn);
             return conn;
         }
         Connection resultSet = null;
@@ -113,29 +105,4 @@ public class KDriver implements java.sql.Driver {
         return wrappedDriver.getParentLogger();
     }
 
-    static String readFile(String path, Charset encoding)
-            throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
-
-    private void MockConnection(Connection conn) throws SQLException {
-//
-//        conn.setReadOnly(true);
-//        conn.setClientInfo(null);
-//        conn.prepareStatement("");
-//        conn.prepareStatement(null);
-//        conn.prepareStatement(null);
-//        conn.setClientInfo(null);
-//        conn.setClientInfo(null);
-//        conn.commit();
-//        conn.nativeSQL("");
-//        conn.getSchema();
-//        conn.isValid(5);
-//        conn.setNetworkTimeout(null,5);
-//        conn.rollback();
-//        conn.getAutoCommit();
-//        conn.isClosed();
-//        conn.isReadOnly();
-    }
 }

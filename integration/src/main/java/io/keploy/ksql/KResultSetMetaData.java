@@ -50,6 +50,7 @@ public class KResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public String getColumnLabel(int column) throws SQLException {
+        System.out.println("JJJJJJJJJJJuhiuhiuhlkjio");
         return wrappedResultSetMetaData.getColumnLabel(column);
     }
 

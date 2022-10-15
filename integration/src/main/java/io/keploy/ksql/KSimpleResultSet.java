@@ -1,5 +1,6 @@
 package io.keploy.ksql;
 
+import io.keploy.grpc.stubs.Service;
 import org.h2.api.ErrorCode;
 import org.h2.message.DbException;
 import org.h2.tools.SimpleRowSource;
@@ -30,6 +31,9 @@ public class KSimpleResultSet implements ResultSet, ResultSetMetaData {
 
     public ResultSet wrappedResultSet = null;
 
+
+    public Service.SqlCol.Builder sqlColBuilder = Service.SqlCol.newBuilder();
+
     /**
      * This constructor is used if the result set is later populated with
      * addRow.
@@ -45,6 +49,12 @@ public class KSimpleResultSet implements ResultSet, ResultSetMetaData {
 
     public KSimpleResultSet(ResultSet rs) {
         this.wrappedResultSet = rs;
+    }
+
+
+    //Collecting data for mocking
+    public void collectMockData() {
+
     }
 
     /**
@@ -81,15 +91,11 @@ public class KSimpleResultSet implements ResultSet, ResultSetMetaData {
         if (name == null) {
             name = "C" + (columns.size() + 1);
         }
+        sqlColBuilder.setName()
         columns.add(new SimpleColumnInfo(name, sqlType, sqlTypeName, precision, scale));
     }
 
-    /**
-     * Add a new row to the result set.
-     * Do not use this method when using a RowSource.
-     *
-     * @param row the row as an array of objects
-     */
+
     public void addRow(Object... row) {
         if (rows == null) {
             throw new IllegalStateException(
@@ -108,21 +114,12 @@ public class KSimpleResultSet implements ResultSet, ResultSetMetaData {
         return ResultSet.CONCUR_READ_ONLY;
     }
 
-    /**
-     * Returns ResultSet.FETCH_FORWARD.
-     *
-     * @return FETCH_FORWARD
-     */
     @Override
     public int getFetchDirection() {
         return ResultSet.FETCH_FORWARD;
     }
 
-    /**
-     * Returns 0.
-     *
-     * @return 0
-     */
+
     @Override
     public int getFetchSize() {
         return 0;
@@ -174,6 +171,8 @@ public class KSimpleResultSet implements ResultSet, ResultSetMetaData {
      */
     @Override
     public boolean next() throws SQLException {
+
+
         if (source != null) {
             rowId++;
             currentRow = source.readRow();
@@ -767,7 +766,9 @@ public class KSimpleResultSet implements ResultSet, ResultSetMetaData {
      */
     @Override
     public String getNString(String columnLabel) throws SQLException {
-        return getString(columnLabel);
+        String colName = getString(columnLabel);
+        sqlColBuilder.setName(colName);
+        return colName;
     }
 
     /**
