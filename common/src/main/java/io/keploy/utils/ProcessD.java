@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -43,20 +42,71 @@ public class ProcessD {
         List<Service.Dependency> deps = kctx.getDeps();
         switch (kctx.getMode()) {
             case MODE_TEST:
-                if (deps == null || deps.size() == 0) {
-                    logger.error("dependency mocking failed: incorrect number of dependencies in keploy context with test id: " + kctx.getTestId());
+                if (kctx.getMock().size() == 0) {
+                    if (deps == null || deps.size() == 0) {
+                        logger.error("dependency mocking failed: incorrect number of dependencies in keploy context with test id: " + kctx.getTestId());
+                        return new depsobj<>(false, null);
+                    }
+                    if (deps.get(0).getDataList().size() != outputs.length) {
+                        logger.error("dependency mocking failed: incorrect number of dependencies in keploy context with test id: " + kctx.getTestId());
+                        return new depsobj<>(false, null);
+                    }
+                    List<Object> res = new ArrayList<>();
+
+                    for (T output : outputs) {
+                        List<Service.DataBytes> bin = deps.get(0).getDataList();
+                        Service.DataBytes c = bin.get(0);
+                        binResult = c.getBin().toByteArray();
+//                    T obj = decode(binResult, output);
+                        String objectClass = output.getClass().getName();
+                        Object obj = null;
+                        switch (objectClass) {
+                            case "io.keploy.ksql.KPreparedStatement":
+                                obj = decodePreparedStatement(binResult);
+                                break;
+                            case "org.postgresql.jdbc.PgResultSet":
+                            case "io.keploy.ksql.KResultSet":
+                                obj = decodeResultSet(binResult);
+                                break;
+                            case "io.keploy.ksql.KConnection":
+                                obj = decodeConnection(binResult);
+                                break;
+                            case "java.lang.Integer":
+                                obj = decodeInt(binResult);
+                                break;
+                            case "java.lang.Boolean":
+                                obj = decodeBoolean(binResult);
+                                break;
+                            default:
+                        }
+
+                        if (obj == null) {
+                            logger.error("dependency mocking failed: failed to decode object for testID : {}", kctx.getTestId());
+                            return new depsobj<>(false, null);
+                        }
+                        res.add(obj);
+                    }
+                    kctx.getDeps().remove(0);
+                    return new depsobj<>(true, res);
+                }
+                List<Service.Mock> mocks = kctx.getMock();
+
+                if (mocks == null || mocks.size() == 0) {
+                    logger.error("mocking failed: incorrect number of mocks in keploy context with test id: " + kctx.getTestId());
                     return new depsobj<>(false, null);
                 }
-                if (deps.get(0).getDataList().size() != outputs.length) {
-                    logger.error("dependency mocking failed: incorrect number of dependencies in keploy context with test id: " + kctx.getTestId());
+                if (mocks.get(0).getSpec().getObjectsCount() != outputs.length) {
+                    logger.error("mocking failed: incorrect number of mocks in keploy context with test id: " + kctx.getTestId());
                     return new depsobj<>(false, null);
                 }
+
                 List<Object> res = new ArrayList<>();
 
                 for (T output : outputs) {
-                    List<Service.DataBytes> bin = deps.get(0).getDataList();
-                    Service.DataBytes c = bin.get(0);
-                    binResult = c.getBin().toByteArray();
+                    List<Service.Mock.Object> bin = mocks.get(0).getSpec().getObjectsList();
+                    Service.Mock.Object c = bin.get(0);
+                    binResult = c.toByteArray();
+//                    System.out.println(binResult.length+" BINRESULT 1 !!" + Arrays.toString(binResult));
 //                    T obj = decode(binResult, output);
                     String objectClass = output.getClass().getName();
                     Object obj = null;
@@ -78,8 +128,6 @@ public class ProcessD {
                             obj = decodeBoolean(binResult);
                             break;
                         default:
-
-
                     }
 
                     if (obj == null) {
@@ -88,9 +136,8 @@ public class ProcessD {
                     }
                     res.add(obj);
                 }
-                kctx.getDeps().remove(0);
 
-//                kctx.getMock().remove(0);
+                kctx.getMock().remove(0);
                 return new depsobj<>(true, res);
 
             case MODE_RECORD:
@@ -100,7 +147,7 @@ public class ProcessD {
                 for (T output : outputs) {
 //                    binResult = encoded(output);
                     String objectClass = output.getClass().getName();
-                    System.out.println("<< <-> >>"+meta);
+
                     switch (objectClass) {
                         case "org.postgresql.jdbc.PgPreparedStatement":
                         case "io.keploy.ksql.KPreparedStatement":
@@ -131,7 +178,7 @@ public class ProcessD {
                     Service.DataBytes dbytes = Service.DataBytes.newBuilder().setBin(ByteString.copyFrom(binResult)).build();
                     dblist.add(dbytes);
                 }
-                System.out.println("HI Meta here - "+meta);
+
                 Service.Dependency genericDeps = Dependencies.addAllData(dblist).setName(meta.get("name")).setType(meta.get("type")).putAllMeta(meta).build();
 
                 kctx.getDeps().add(genericDeps);
@@ -141,6 +188,7 @@ public class ProcessD {
                 Service.Mock.Object.newBuilder().setType("").build();
 
                 for (Service.DataBytes s : dblist) {
+                    System.out.println(Arrays.toString(s.getBin().toByteArray()));
                     Service.Mock.Object obj = Service.Mock.Object.newBuilder().setData(s.getBin()).build();
                     lobj.add(obj);
                 }
@@ -219,7 +267,7 @@ public class ProcessD {
         xstream.addPermission(AnyTypePermission.ANY);
         xstream.ignoreUnknownElements();
        String temp = xstream.toXML(output);
-        System.out.println(temp);
+//        System.out.println(temp);
         int x = c.incrementAndGet();
         try (PrintWriter out = new PrintWriter("pp"+x+".txt")) {
             out.println(temp);
@@ -255,7 +303,7 @@ public class ProcessD {
         xstream.addPermission(AnyTypePermission.ANY);
         xstream.ignoreUnknownElements();
         String temp = xstream.toXML(output);
-        System.out.println(temp);
+//        System.out.println(temp);
         int x = c.incrementAndGet();
         try (PrintWriter out = new PrintWriter("cc"+x+".txt")) {
             out.println(temp);
@@ -274,9 +322,6 @@ public class ProcessD {
         xstream.addPermission(AnyTypePermission.ANY);
         xstream.ignoreUnknownElements();
         String temp = xstream.toXML(output);
-        System.out.println(temp);
-
-
         int x = c.incrementAndGet();
 
         try (PrintWriter out = new PrintWriter("rs"+x+".txt")) {
@@ -287,12 +332,17 @@ public class ProcessD {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(outputStream);
         xstream.toXML(output, writer);
+//        System.out.println(outputStream.toByteArray().length);
+
         return outputStream.toByteArray();
     }
 
     public static ResultSet decodeResultSet(byte[] bin) {
+//        System.out.println(bin.length+" BIN 2 !!" + Arrays.toString(bin));
+        byte[] bit = new byte[bin.length-4];
+        System.arraycopy(bin, 4, bit, 0, bit.length);
 
-        ByteArrayInputStream input = new ByteArrayInputStream(bin);
+        ByteArrayInputStream input = new ByteArrayInputStream(bit);
         XStream xstream = new XStream();
         xstream.addPermission(AnyTypePermission.ANY);
         ResultSet object = null;

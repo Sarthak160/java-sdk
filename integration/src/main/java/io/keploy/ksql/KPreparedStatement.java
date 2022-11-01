@@ -21,6 +21,8 @@ import java.util.Objects;
 public class KPreparedStatement implements PreparedStatement {
  PreparedStatement wrappedPreparedStatement;
 
+ String Query;
+
  public KPreparedStatement(PreparedStatement pst) {
   wrappedPreparedStatement = pst;
  }
@@ -29,12 +31,17 @@ public class KPreparedStatement implements PreparedStatement {
 
  }
 
+ public KPreparedStatement(String st) {
+  Query = st;
+ }
+
  @Override
  public ResultSet executeQuery() throws SQLException {
   Kcontext kctx = Context.getCtx();
   if (kctx == null) {
    ResultSet resultSet = Mockito.mock(ResultSet.class);
    return new KResultSet(resultSet);
+//   return new KResultSet(wrappedPreparedStatement.executeQuery());
   }
   mode.ModeType mode = kctx.getMode();
 
@@ -42,9 +49,12 @@ public class KPreparedStatement implements PreparedStatement {
   switch (mode) {
    case MODE_TEST:
     // don't run
+//    try to make new query using get connection and prepared statement by saving the query !
+
     break;
    case MODE_RECORD:
     rs = wrappedPreparedStatement.executeQuery();
+    System.out.println(rs);
     break;
    default:
     System.out.println("integrations: Not in a valid sdk mode");
@@ -674,7 +684,9 @@ public class KPreparedStatement implements PreparedStatement {
 
  @Override
  public Connection getConnection() throws SQLException {
-  return new KConnection(wrappedPreparedStatement.getConnection());
+  System.out.println("GETTING CONNECTION HUH !!");
+  Connection c = wrappedPreparedStatement.getConnection();
+  return new KConnection(c);
  }
 
  @Override

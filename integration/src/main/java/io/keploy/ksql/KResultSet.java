@@ -2,6 +2,8 @@ package io.keploy.ksql;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.keploy.grpc.stubs.Service;
+import io.keploy.regression.context.Context;
+import io.keploy.regression.context.Kcontext;
 import io.keploy.utils.ProcessSQL;
 
 import java.io.InputStream;
@@ -14,15 +16,6 @@ import java.util.*;
 
 public class KResultSet implements ResultSet {
  ResultSet wrappedResultSet;
-
-// message SqlCol  {
-//  string Name = 1;
-//  string Type = 2;
-//  //optional fields
-//  int64 Precision = 3;
-//  int64 Scale = 4;
-// }
-
 
  private List<Service.SqlCol> sqlColList;
 
@@ -82,7 +75,11 @@ public class KResultSet implements ResultSet {
    try {
     HashMap<String, String> meta = new HashMap<>();
     meta.put("method", "next()");
-    ProcessSQL.ProcessDep(meta, table);
+    Kcontext kctx = Context.getCtx();
+    if (kctx != null) {
+     ProcessSQL.ProcessDep(meta, table); ;
+    }
+
    } catch (InvalidProtocolBufferException e) {
     throw new RuntimeException(e);
    }
