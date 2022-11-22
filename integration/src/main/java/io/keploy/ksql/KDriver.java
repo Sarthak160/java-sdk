@@ -1,12 +1,10 @@
 package io.keploy.ksql;
 
+
+import io.keploy.regression.Mode;
 import io.keploy.regression.context.Context;
 import io.keploy.regression.context.Kcontext;
-import io.keploy.regression.Mode;
-//import oracle.jdbc.driver.OracleDriver;
-import oracle.jdbc.*;
-import org.postgresql.Driver;
-//import com.mysql.cj.jdbc.Driver;
+import oracle.jdbc.driver.OracleDriver;
 
 import java.sql.Connection;
 import java.sql.DriverPropertyInfo;
@@ -17,7 +15,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 public class KDriver implements java.sql.Driver {
-    public org.postgresql.Driver wrappedDriver;
+    public java.sql.Driver wrappedDriver;
 
 
     private String _url;
@@ -27,7 +25,7 @@ public class KDriver implements java.sql.Driver {
     private String _databaseName;
     public final Kcontext kctx = Context.getCtx();
     Mode.ModeType mode = null;
-
+    public static String DriverName = "";
     private Integer _version = 1;
     private Connection _connection;
     public Boolean _isConnected = false;
@@ -41,23 +39,33 @@ public class KDriver implements java.sql.Driver {
             mode = Mode.ModeType.MODE_TEST;
         }
         wrappedDriver = getWrappedDriver();
-        System.out.println("hello inside no-arg constructor");
+//        System.out.println("hello inside no-arg constructor");
     }
 
-    private Driver getWrappedDriver() throws SQLException {
-        String driver = "postgres";
+    private java.sql.Driver getWrappedDriver() throws SQLException {
+        String driver = DriverName;
+
+        java.sql.Driver d = null;
         switch (driver) {
-            case "postgres":
-                return new org.postgresql.Driver();
-            case "mysql":
-//                return new com.mysql.cj.jdbc.Driver();
-            case "h2":
-//                return new org.h2.Driver();
-            case "oracle":
-//                return new OracleDriver();
+            case "org.postgresql.Driver":
+                d =  new org.postgresql.Driver();
+                break;
+            case "com.mysql.cj.jdbc.Driver":
+                d =  new com.mysql.cj.jdbc.Driver();
+                break;
+            case "org.h2.Driver":
+                d = new org.h2.Driver();
+                break;
+            case "oracle.jdbc.driver.OracleDriver":
+                d = new OracleDriver();
+                break;
+            case "org.mariadb.jdbc.Driver":
+//                d = new org.mariadb.jdbc.Driver();
+                break;
             default:
-                return null;
+                d =  null;
         }
+        return d;
     }
 
 
@@ -79,6 +87,9 @@ public class KDriver implements java.sql.Driver {
 
     @Override
     public boolean acceptsURL(String url) throws SQLException {
+        if (Objects.equals(System.getenv("KEPLOY_MODE"), "test")) {
+            return true;
+        }
         boolean acceptsURL = wrappedDriver.acceptsURL(url);
         return acceptsURL;
     }
@@ -90,6 +101,9 @@ public class KDriver implements java.sql.Driver {
 
     @Override
     public int getMajorVersion() {
+        if (Objects.equals(System.getenv("KEPLOY_MODE"), "test")) {
+            return 1;
+        }
         int getMajor = wrappedDriver.getMajorVersion();
         return getMajor;
     }
@@ -97,12 +111,18 @@ public class KDriver implements java.sql.Driver {
 
     @Override
     public int getMinorVersion() {
+        if (Objects.equals(System.getenv("KEPLOY_MODE"), "test")) {
+            return 1;
+        }
         int getMinor = wrappedDriver.getMinorVersion();
         return getMinor;
     }
 
     @Override
     public boolean jdbcCompliant() {
+        if (Objects.equals(System.getenv("KEPLOY_MODE"), "test")) {
+            return true;
+        }
         boolean jdbcCompliant = wrappedDriver.jdbcCompliant();
         return jdbcCompliant;
     }

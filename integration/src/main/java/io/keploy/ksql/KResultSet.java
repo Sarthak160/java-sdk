@@ -1,27 +1,18 @@
 package io.keploy.ksql;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.thoughtworks.xstream.security.AnyTypePermission;
 import io.keploy.grpc.stubs.Service;
-import io.keploy.regression.Mode;
 import io.keploy.regression.context.Context;
 import io.keploy.regression.context.Kcontext;
-import io.keploy.utils.ProcessD;
 import io.keploy.utils.ProcessSQL;
-import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.*;
 import java.util.*;
-
-import static io.keploy.utils.ProcessD.readFile;
-import static io.keploy.utils.ProcessD.xstream;
 
 public class KResultSet implements ResultSet {
  ResultSet wrappedResultSet;
@@ -32,13 +23,9 @@ public class KResultSet implements ResultSet {
 
  private StringBuilder sb;
 
- private static int commited = 1;
  private Set<Service.SqlCol> colExists;
 
- private Map<String, String> RowData = new HashMap<>();
-
- private Service.Table TableData;
- boolean select = false;
+ boolean columnsAdded = false;
 
 
  public KResultSet(ResultSet rs) {
@@ -47,50 +34,10 @@ public class KResultSet implements ResultSet {
   colExists = new HashSet<>();
   rowsList = new ArrayList<>();
   sb = new StringBuilder();
-
-  Kcontext kctx = Context.getCtx();
-  if (kctx != null) {
-   Map<String, String> meta;
-   meta = ProcessD.getMeta(rs);
-   meta.put("operation", "ResultSet");
-   if (kctx.getMode() == Mode.ModeType.MODE_TEST) {
-    String xml = null;
-    try {
-     xml = readFile("/Users/sarthak_1/Documents/Keploy/KeployJava/java-sdk/PostgresResultSet.txt", StandardCharsets.UTF_8);
-    } catch (IOException e) {
-     throw new RuntimeException(e);
-    }
-    xstream.addPermission(AnyTypePermission.ANY);
-    rs = (ResultSet) xstream.fromXML(xml);
-   }
-//   depsobj rs2;
-//   try {
-//    rs2 = ProcessD.ProcessDep(meta, rs);
-//   } catch (InvalidProtocolBufferException e) {
-//    throw new RuntimeException(e);
-//   }
-//   if (rs2.isMock() && rs2.getRes() != null) {
-//    rs = (ResultSet) rs2.getRes().get(0);
-//   }
-  }
-  //post k case m jo select aata h use chahiye hota h
-  if (KConnection.FirstTime<1){
-   KResultSet.SetCommit(0);
-  }else {
-   KResultSet.SetCommit(1);
-  }
-  KConnection.FirstTime  = 0;
-
   wrappedResultSet = rs;
  }
 
- public KResultSet() {
-
- }
-
- public static void SetCommit(int cnt) {
-  commited = cnt;
- }
+ public KResultSet(){}
 
 
  private void addSqlColToList(String colName, String colType) {
@@ -105,8 +52,6 @@ public class KResultSet implements ResultSet {
 
  private void addRows() {
   if (sb.length() != 0) {
-
-   select = true;
    sb.deleteCharAt(sb.length() - 1);
    sb.insert(0, "[");
    sb.append("]");
@@ -115,103 +60,36 @@ public class KResultSet implements ResultSet {
   sb = new StringBuilder();
  }
 
- void extractTable(int cnt) {
-  if (cnt != 0) {
-   return;
-  }
-  Service.Table testTable;
-  try {
-   System.out.println();
-   testTable = ProcessSQL.ProcessDep(null, null, 0);
-   System.out.println(testTable);
-  } catch (InvalidProtocolBufferException e) {
-   throw new RuntimeException(e);
-  }
-  TableData = testTable;
- }
- // for getting rows from testcase exported as yamls
-
- // it should return a single row at a time and should and if row is not null it should go to the underlying methods which set the result for
- // a particular query ..
- // create a map with column name along with value ... it will return true if
- private boolean extractRows() {
-
-  if (index == 0)
-   extractTable(index);
-
-  List<String> rows = TableData.getRowsList();
-  if (index == rows.size()) {
-   return false;
-  }
-  String s = rows.get(index);
-  String[] split = new StringBuilder(s).substring(1, s.length() - 1).split(",");
-  System.out.println(Arrays.toString(split)); // this returns a single row you just have to
-  RowData.clear();
-  for (int i = 0; i < TableData.getColsCount(); i++) {
-   Service.SqlCol col = TableData.getCols(i);
-   RowData.put(col.getName(), split[i]);
-  }
-
-  return true;
- }
-
-
- int index = 0;
- long id = 0;
-
  @Override
  public boolean next() throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  if (kctx == null) {
-   return false;
-  }
-  Mode.ModeType mode = kctx.getMode();
 
-  boolean hasNext = false;
-  switch (mode) {
-   case MODE_TEST:
-    if (commited > 0) {
-     commited--;
-     List<Service.Mock> mocks = kctx.getMock();
-     id = mocks.get(0).getSpec().getInt();
-     mocks.remove(0);
-     return true;
-    }
-    hasNext = extractRows();
-    index++;
-    break;
-   case MODE_RECORD:
-    hasNext = wrappedResultSet.next();
-    addRows();
-    if (!hasNext) {
-     Service.Table.Builder tableBuilder = Service.Table.newBuilder();
-     tableBuilder.addAllCols(sqlColList);
-     tableBuilder.addAllRows(rowsList);
-     Service.Table table = tableBuilder.build();
-     System.out.println(table);
-     try {
-      HashMap<String, String> meta = new HashMap<>();
-      meta.put("method", "next()");
-      ProcessSQL.ProcessDep(meta, table, 0);
-     } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-     }
-    }
-    break;
-   default:
-    System.out.println("integrations: Not in a valid sdk mode");
-  }
+  boolean hasNext = wrappedResultSet.next();
+//  addRows();
+//
+//  if (!hasNext) {
+//   Service.Table.Builder tableBuilder = Service.Table.newBuilder();
+//   tableBuilder.addAllCols(sqlColList);
+//   tableBuilder.addAllRows(rowsList);
+//   Service.Table table = tableBuilder.build();
+//   System.out.println("TABLE -- " + table);
+//   try {
+//    HashMap<String, String> meta = new HashMap<>();
+//    meta.put("method", "next()");
+//    Kcontext kctx = Context.getCtx();
+//    if (kctx != null) {
+//     ProcessSQL.ProcessDep(meta, table,0);
+//    }
+//
+//   } catch (InvalidProtocolBufferException e) {
+//    throw new RuntimeException(e);
+//   }
+//  }
 
   return hasNext;
  }
 
  @Override
  public void close() throws SQLException {
-//  Kcontext kctx = Context.getCtx();
-//  Mode.ModeType mode = kctx.getMode();
-//  if (mode == Mode.ModeType.MODE_TEST) {
-//   return;
-//  }
   wrappedResultSet.close();
  }
 
@@ -310,11 +188,6 @@ public class KResultSet implements ResultSet {
 
  @Override
  public String getString(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return RowData.get(columnLabel);
-  }
   String gs = wrappedResultSet.getString(columnLabel);
   sb.append(gs).append(",");
   addSqlColToList(columnLabel, gs.getClass().getSimpleName());
@@ -323,11 +196,6 @@ public class KResultSet implements ResultSet {
 
  @Override
  public boolean getBoolean(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return Boolean.parseBoolean(RowData.get(columnLabel));
-  }
   Boolean gb = wrappedResultSet.getBoolean(columnLabel);
   sb.append(gb).append(",");
   addSqlColToList(columnLabel, gb.getClass().getSimpleName());
@@ -337,11 +205,6 @@ public class KResultSet implements ResultSet {
 
  @Override
  public byte getByte(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return Byte.parseByte(RowData.get(columnLabel));
-  }
   Byte gb = wrappedResultSet.getByte(columnLabel);
   sb.append(gb).append(",");
   addSqlColToList(columnLabel, gb.getClass().getSimpleName());
@@ -350,11 +213,6 @@ public class KResultSet implements ResultSet {
 
  @Override
  public short getShort(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return Short.parseShort(RowData.get(columnLabel));
-  }
   Short gs = wrappedResultSet.getShort(columnLabel);
   sb.append(gs).append(",");
   addSqlColToList(columnLabel, gs.getClass().getSimpleName());
@@ -363,58 +221,22 @@ public class KResultSet implements ResultSet {
 
  @Override
  public int getInt(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return Integer.parseInt(RowData.get(columnLabel));
-  }
   Integer gi = wrappedResultSet.getInt(columnLabel);
   sb.append(gi).append(",");
   addSqlColToList(columnLabel, gi.getClass().getSimpleName());
   return gi;
  }
 
- void RecordIds(long id) {
-  try {
-   HashMap<String, String> meta = new HashMap<>();
-   meta.put("method", "next()");
-
-   ProcessSQL.ProcessDep(meta, null, Math.toIntExact(id));
-
-  } catch (InvalidProtocolBufferException e) {
-   throw new RuntimeException(e);
-  }
-  commited--;
- }
-
  @Override
  public long getLong(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   if (id != 0) {
-    commited --;
-    return id;
-   }
-   return Long.parseLong(RowData.get(columnLabel));
-  }
   Long gl = wrappedResultSet.getLong(columnLabel);
   sb.append(gl).append(",");
   addSqlColToList(columnLabel, gl.getClass().getSimpleName());
-  System.out.println(commited);
-  if (commited > 0) {
-   RecordIds(gl);
-  }
   return gl;
  }
 
  @Override
  public float getFloat(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return Float.parseFloat(RowData.get(columnLabel));
-  }
   Float gf = wrappedResultSet.getFloat(columnLabel);
   sb.append(gf).append(",");
   addSqlColToList(columnLabel, gf.getClass().getSimpleName());
@@ -423,11 +245,6 @@ public class KResultSet implements ResultSet {
 
  @Override
  public double getDouble(String columnLabel) throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return Double.parseDouble(RowData.get(columnLabel));
-  }
   Double gd = wrappedResultSet.getDouble(columnLabel);
   sb.append(gd).append(",");
   addSqlColToList(columnLabel, gd.getClass().getSimpleName());
@@ -508,11 +325,6 @@ public class KResultSet implements ResultSet {
 
  @Override
  public ResultSetMetaData getMetaData() throws SQLException {
-  Kcontext kctx = Context.getCtx();
-  Mode.ModeType mode = kctx.getMode();
-  if (mode == Mode.ModeType.MODE_TEST) {
-   return new KResultSetMetaData(Mockito.mock(ResultSetMetaData.class));
-  }
   System.out.println(">>>>>>>>>>>>>>>>>>>>>> call >>>>>>>>>>>>>>>");
   ResultSetMetaData getMetaData = wrappedResultSet.getMetaData();
   ResultSetMetaData kgetMetaData = new KResultSetMetaData(getMetaData);

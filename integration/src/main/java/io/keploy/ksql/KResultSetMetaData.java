@@ -1,9 +1,5 @@
 package io.keploy.ksql;
 
-import io.keploy.regression.Mode;
-import io.keploy.regression.context.Context;
-import io.keploy.regression.context.Kcontext;
-
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
@@ -13,18 +9,10 @@ public class KResultSetMetaData implements ResultSetMetaData {
     public KResultSetMetaData(ResultSetMetaData getMetaData) {
         wrappedResultSetMetaData = getMetaData;
     }
-
     @Override
     public int getColumnCount() throws SQLException {
-        Kcontext kctx = Context.getCtx();
-        Mode.ModeType mode = kctx.getMode();
-        if (mode == Mode.ModeType.MODE_TEST) {
-            return 5;
-        }
-        System.out.println("I am column count !! " + wrappedResultSetMetaData.getColumnCount());
         return wrappedResultSetMetaData.getColumnCount();
     }
-
     @Override
     public boolean isAutoIncrement(int column) throws SQLException {
         return wrappedResultSetMetaData.isAutoIncrement(column);

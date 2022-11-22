@@ -156,7 +156,7 @@ public class KSimpleResultSet implements ResultSet, ResultSetMetaData {
      * Closes the result set and releases the resources.
      */
     @Override
-    public void  close() {
+    public void close() {
         currentRow = null;
         rows = null;
         columns = null;
