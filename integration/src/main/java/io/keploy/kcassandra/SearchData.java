@@ -28,7 +28,7 @@ public class SearchData {
             System.out.println("HElo");
             rs.forEach(rr -> {
                 System.out.println("movie name : " + rr.getString("title"));
-                System.out.println("movie desc : " + rr.getString("descreiption"));
+                System.out.println("movie desc : " + rr.getString("description"));
                 System.out.println("rating : " + rr.getString("rating"));
             });
 

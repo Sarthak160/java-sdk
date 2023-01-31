@@ -11,6 +11,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class KResultSetFuture implements ResultSetFuture {
+
+    ResultSetFuture wrappedResultSetFuture = null;
+    public KResultSetFuture(ResultSetFuture resultSetFuture) {
+        wrappedResultSetFuture = resultSetFuture;
+    }
     @Override
     public ResultSet getUninterruptibly() {
         return null;

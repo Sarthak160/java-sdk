@@ -11,11 +11,11 @@ public class InsertData {
             DBConnector connector = new DBConnector();
             connector.connectdb("localhost", 9042);
 
-            final String insertQuery = "INSERT INTO movies_keyspace.movies (title,year,descreiption,rating) "
+            final String insertQuery = "INSERT INTO movies_keyspace.movies (title,year,description,rating) "
                     + "VALUES (?,?,?,?)";
 
             PreparedStatement psInsert = connector.getSession().prepare(insertQuery);
-            BoundStatement bsInsert = psInsert.bind("Bhalu", 2019, "Horror", "4.5");
+            BoundStatement bsInsert = psInsert.bind("Kaalu", 2022, "Comedy", "4");
             connector.getSession().execute(bsInsert);
 
             connector.close();

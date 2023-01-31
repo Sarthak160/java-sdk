@@ -9,12 +9,19 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.Iterator;
 import java.util.List;
 
+import static io.keploy.kcassandra.App.cmode;
+
 public class KResultSet implements ResultSet {
 
     public ResultSet wrappedResultSet = null;
 
     public KResultSet(ResultSet resultSet) {
+        System.out.println("inside KResultSet");
         wrappedResultSet = resultSet;
+    }
+
+    public KResultSet() {
+        System.out.println("inside KResultSet in test");
     }
 
     @Override
@@ -39,6 +46,7 @@ public class KResultSet implements ResultSet {
 
     @Override
     public Row one() {
+        System.out.println("inside KResultSet one");
         return wrappedResultSet.one();
     }
 
@@ -47,9 +55,39 @@ public class KResultSet implements ResultSet {
         return null;
     }
 
+    //    @Override
+//    public Iterator<Row> iterator() {
+//        return wrappedResultSet.iterator();
+//    }
     @Override
     public Iterator<Row> iterator() {
-        return wrappedResultSet.iterator();
+        if (cmode.equals("test")) {
+            return new Iterator<Row>() {
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+
+                @Override
+                public Row next() {
+                    System.out.println("inside KResultSet iterator" + cmode);
+                    return null;
+                }
+            };
+        }
+        return new Iterator<Row>() {
+            final Iterator<Row> wrappedIterator = wrappedResultSet.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return wrappedIterator.hasNext();
+            }
+
+            @Override
+            public Row next() {
+                return new KRow(wrappedIterator.next());
+            }
+        };
     }
 
     @Override

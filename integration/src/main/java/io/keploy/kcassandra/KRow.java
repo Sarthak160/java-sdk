@@ -10,6 +10,12 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 public class KRow implements Row {
+
+    public Row wrappedRow = null;
+    public KRow(Row row) {
+        System.out.println("inside KRow");
+        wrappedRow = row;
+    }
     @Override
     public ColumnDefinitions getColumnDefinitions() {
         return null;
@@ -97,7 +103,7 @@ public class KRow implements Row {
 
     @Override
     public String getString(int i) {
-        return null;
+        return wrappedRow.getString(i);
     }
 
     @Override
@@ -247,7 +253,7 @@ public class KRow implements Row {
 
     @Override
     public String getString(String s) {
-        return null;
+        return wrappedRow.getString(s);
     }
 
     @Override

@@ -5,6 +5,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.Map;
 
+import static io.keploy.kcassandra.App.cmode;
+
 public class KSession implements Session {
     Session wrappedSession = null;
 
@@ -14,7 +16,7 @@ public class KSession implements Session {
     }
 
     public KSession(){
-
+        System.out.println("inside Ksession in test");
     }
     @Override
     public String getLoggedKeyspace() {
@@ -33,7 +35,14 @@ public class KSession implements Session {
 
     @Override
     public ResultSet execute(String s) {
-        return new KResultSet(wrappedSession.execute(s));
+        if(cmode.equals("record")){
+            System.out.println("inside KSession execute");
+            System.out.println(s);
+            return new KResultSet(wrappedSession.execute(s));
+        }else {
+            return new KResultSet();
+        }
+
     }
 
     @Override

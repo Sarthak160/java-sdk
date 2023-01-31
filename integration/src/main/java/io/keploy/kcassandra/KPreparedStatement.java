@@ -7,6 +7,13 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 public class KPreparedStatement implements PreparedStatement {
+    public PreparedStatement wrappedPreparedStatement = null;
+
+    public KPreparedStatement(PreparedStatement preparedStatement) {
+        System.out.println("inside KPreparedStatement");
+        wrappedPreparedStatement = preparedStatement;
+    }
+
     @Override
     public ColumnDefinitions getVariables() {
         return null;
