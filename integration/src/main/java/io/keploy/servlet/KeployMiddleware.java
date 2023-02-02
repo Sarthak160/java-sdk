@@ -3,13 +3,13 @@ package io.keploy.servlet;
 import io.grpc.netty.shaded.io.netty.util.internal.InternalThreadLocalMap;
 import io.keploy.grpc.stubs.Service;
 import io.keploy.regression.KeployInstance;
+import io.keploy.regression.Mode;
 import io.keploy.regression.context.Context;
 import io.keploy.regression.context.Kcontext;
 import io.keploy.regression.keploy.AppConfig;
 import io.keploy.regression.keploy.Config;
 import io.keploy.regression.keploy.Keploy;
 import io.keploy.regression.keploy.ServerConfig;
-import io.keploy.regression.Mode;
 import io.keploy.service.GrpcService;
 import io.keploy.utils.*;
 import lombok.SneakyThrows;
@@ -21,9 +21,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -214,6 +212,7 @@ public class KeployMiddleware implements Filter {
 
         if (k == null || Mode.getMode() != null && (Mode.getMode()).equals(Mode.ModeType.MODE_OFF)) {
             filterChain.doFilter(request, response);
+            countLines();
             return;
         }
 
@@ -246,7 +245,7 @@ public class KeployMiddleware implements Filter {
 
 
         filterChain.doFilter(requestWrapper, responseWrapper);
-
+        countLines();
         byte[] reqArr = requestWrapper.getData();
         byte[] resArr = responseWrapper.getData();
 
@@ -415,5 +414,40 @@ public class KeployMiddleware implements Filter {
     @Override
     public void destroy() {
         InternalThreadLocalMap.destroy();
+    }
+
+    private void countLines() {
+        Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
+        for (Thread thread : allStackTraces.keySet()) {
+            StackTraceElement[] stackTrace = allStackTraces.get(thread);
+            System.out.println("Thread: " + thread.getName());
+            for (StackTraceElement element : stackTrace) {
+                System.out.println("\t" + element);
+            }
+        }
+        System.out.println("____---------------------------------____");
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stackTraceElements) {
+            if (element.getClassName().endsWith("Controller")) {
+                System.out.println("Class Name: " + element.getClassName());
+                System.out.println("Method Name: " + element.getMethodName());
+                System.out.println("Line Number: " + element.getLineNumber());
+            }
+        }
+
+        StackTraceElement[] stackTrace = new StackTraceElement[2];
+        stackTrace[0] = new StackTraceElement("Class1", "method1", "Class1.java", 1);
+        stackTrace[1] = new StackTraceElement("Class2", "method2", "Class2.java", 2);
+        for(StackTraceElement element : stackTrace){
+            System.out.println(element);
+        }
+        Throwable customStackTrace = new Throwable();
+        customStackTrace.setStackTrace(stackTrace);
+
+        System.out.println(customStackTrace);
+
+
+
+
     }
 }
